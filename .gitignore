@@ -1,0 +1,10 @@
+# Misc
+.vscode
+.DS_Store
+.*.swp
+
+# python cache files
+__pycache__/
+
+# datadir
+data/
