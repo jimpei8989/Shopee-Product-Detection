@@ -48,3 +48,12 @@
 - 41: pillows / sofa / curtains
 
 > 早知道用中文寫......
+
+### Data Splitting
+
+```python3
+python3 data-split.py
+```
+
+It will generate three files, `data/train.pkl`, `data/valid.pkl` and `data/test.pkl`. The format of the files are listed in `data-split.py`
+
