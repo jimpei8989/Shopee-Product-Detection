@@ -98,11 +98,13 @@ def main():
 
             return map(np.mean, zip(*losses))
 
-        for epoch in range(args.retrain + 1, args.epochs):
+        for epoch in range(args.retrain + 1, args.epochs + 1):
             with EventTimer(verbose=False) as et:
                 print(f'====== Epoch {epoch:3d} / {args.epochs:3d} ======')
                 trainLoss, trainAccu = runEpoch(trainDataloader, train = True, name='training  ')
                 validLoss, validAccu = runEpoch(validDataloader, name='validation')
+
+                history.append(((trainLoss, trainAccu), (validLoss, validAccu)))
 
                 scheduler.step(validLoss)
                 print(f'[{et.gettime():.4f}s] Training: {trainLoss:.6f} / {trainAccu:.4f} ; Validation {validLoss:.6f} / {validAccu:.4f}')
@@ -114,6 +116,9 @@ def main():
                     'scheduler_state_dict': scheduler.state_dict(),
                     'history': history,
                 }, os.path.join(checkpointDir, f'checkpoint-{epoch:03d}.pt'))
+
+        torch.save(model.state_dict(), os.path.join(args.modelDir, 'model-weights.pt'))
+        utils.pickleSave(history, os.path.join(args.modelDir, 'history.pkl'))
 
 def parseArguments():
     parser = ArgumentParser()
