@@ -2,6 +2,7 @@
 
 ### Useful Links
 - [Google Drive - Announcements](https://drive.google.com/drive/folders/1V_sHZN2MmhcfeVao3hoJpjRWLSnm1_Pe)
+- [Kaggle Competition Page](https://www.kaggle.com/c/shopee-product-detection-student/)
 
 ### Categories
 - 00: dresses
