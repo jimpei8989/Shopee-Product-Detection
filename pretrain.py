@@ -50,15 +50,16 @@ def main():
         trainDataset = ProductDataset(os.path.join(args.dataDir, 'train'), os.path.join(args.trainImages), transform=trainingPreprocessing)
         validDataset = ProductDataset(os.path.join(args.dataDir, 'train'), os.path.join(args.validImages), transform=inferencePreprocessing)
 
-        trainDataloader = DataLoader(trainDataset, batch_size=args.batchSize, num_workers=args.numWorkers)
-        validDataloader = DataLoader(validDataset, batch_size=args.batchSize, num_workers=args.numWorkers)
+        trainDataloader = DataLoader(trainDataset, batch_size=args.batchSize, num_workers=args.numWorkers, shuffle=True)
+        validDataloader = DataLoader(validDataset, batch_size=args.batchSize, num_workers=args.numWorkers, shuffle=False)
 
         print(f'> Training dataset:\t{len(trainDataset)}')
         print(f'> Validation dataset:\t{len(validDataset)}')
 
     with EventTimer(f'Load pretrained model - {args.pretrainModel}'):
         model = models.GetPretrainedModel(args.pretrainModel, 42)
-        torchsummary.summary(model, (3, 224, 224), device='cpu')
+        #torchsummary will crash under densenet, skip the summary.
+        #torchsummary.summary(model, (3, 224, 224), device='cpu')
 
     with EventTimer(f'Train model'):
         model.cuda()
@@ -85,7 +86,7 @@ def main():
                 for x, y in tqdm(dataloader, desc=name, dynamic_ncols=True):
                     if train:
                         optimizer.zero_grad()
-
+                    
                     output = model(x.cuda()).cpu()
                     loss = criterion(output, y)
 
@@ -117,24 +118,25 @@ def main():
                     'history': history,
                 }, os.path.join(checkpointDir, f'checkpoint-{epoch:03d}.pt'))
 
-        torch.save(model.state_dict(), os.path.join(args.modelDir, 'model-weights.pt'))
+        # save model as its coressponding name
+        torch.save(model.state_dict(), os.path.join(args.modelDir, args.pretrainModel))
         utils.pickleSave(history, os.path.join(args.modelDir, 'history.pkl'))
 
 def parseArguments():
     parser = ArgumentParser()
 
     parser.add_argument('--numWorkers', type=int, default=8)
-    parser.add_argument('--dataDir', default='data/')
-    parser.add_argument('--modelDir', default=f'models/{datetime.now().strftime("%m%d-%H%M")}')
-    parser.add_argument('--trainImages', default='data/train.pkl')
-    parser.add_argument('--validImages', default='data/valid.pkl')
+    parser.add_argument('--dataDir', default='/tmp3/b06902058/data/')
+    parser.add_argument('--modelDir', default=f'/tmp3/b06902058/models/{datetime.now().strftime("%m%d-%H%M")}')
+    parser.add_argument('--trainImages', default='/tmp3/b06902058/data/train.pkl')
+    parser.add_argument('--validImages', default='/tmp3/b06902058/data/valid.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
 
     parser.add_argument('--epochs', type=int, default=25)
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=5e-4)
     parser.add_argument('--retrain', type=int, default=0)
 
-    parser.add_argument('--pretrainModel', default='resnet50')
+    parser.add_argument('--pretrainModel', default='resnet152')
     return parser.parse_args()
 
 if __name__ == '__main__':

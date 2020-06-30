@@ -1,5 +1,4 @@
 import typing, importlib
-
 from torch import nn
 from torchvision import models
 
@@ -36,6 +35,17 @@ def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True
             # Add classification layer
             numFeatures = model.classifier[-1].in_features
             model.classifier[-1] = nn.Linear(numFeatures, numClasses)
+        elif name[:5] == 'dense':
+            # Load model
+            model = getattr(models, name)(pretrained=pretrain)
+
+            # Set feature extraction weights require
+            if finetune is False:
+                removeGrads(model)
+
+            # Add classification layer
+            num_ftrs = model.classifier.in_features
+            model.classifier = nn.Linear(num_ftrs, numClasses)
         else:
             print('! No such pretrained model')
             return None

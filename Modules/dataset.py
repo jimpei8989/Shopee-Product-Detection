@@ -26,7 +26,7 @@ class ProductDataset(Dataset):
             img = self.transform(img)
 
         if self.labels is None:
-            return img
+            return img, self.imgPathes[idx]
         else:
             return img, self.labels[idx]
 
