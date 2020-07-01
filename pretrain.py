@@ -83,18 +83,18 @@ def main():
                 else: model.eval()
 
                 losses = []
-                for x, y, z in tqdm(dataloader, desc=name, dynamic_ncols=True):
+                for img, label, imgPath in tqdm(dataloader, desc=name, ncols=80):
                     if train:
                         optimizer.zero_grad()
                     
-                    output = model(x.cuda()).cpu()
-                    loss = criterion(output, y)
+                    output = model(img.cuda()).cpu()
+                    loss = criterion(output, label)
 
                     if train:
                         loss.backward()
                         optimizer.step()
 
-                    accu = accuracy(output.data.numpy(), y.numpy())
+                    accu = accuracy(output.data.numpy(), label.numpy())
                     losses.append((loss.item(), accu))
 
             return map(np.mean, zip(*losses))
@@ -127,8 +127,6 @@ def main():
 
             print(f"{newDataloader.__len__() * args.batchSize} images remain after cleanup")
             return newDataloader
-            
-            
 
         for epoch in range(args.retrain + 1, args.epochs + 1):
             with EventTimer(verbose=False) as et:
@@ -141,8 +139,9 @@ def main():
                 scheduler.step(validLoss)
                 print(f'[{et.gettime():.4f}s] Training: {trainLoss:.6f} / {trainAccu:.4f} ; Validation {validLoss:.6f} / {validAccu:.4f}')
 
-            with EventTimer('Cleaning Training Set'):
-                trainDataloader = cleanUp()
+            if args.cleanup:
+                with EventTimer('Cleaning Training Set'):
+                    trainDataloader = cleanUp()
 
             if epoch % 5 == 0:
                 torch.save({
@@ -169,6 +168,7 @@ def parseArguments():
     parser.add_argument('--epochs', type=int, default=15)
     parser.add_argument('--lr', type=float, default=5e-4)
     parser.add_argument('--retrain', type=int, default=0)
+    parser.add_argument('--cleanup', action='store_true')
 
     parser.add_argument('--pretrainModel', default='resnet50')
     parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')
