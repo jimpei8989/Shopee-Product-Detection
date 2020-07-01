@@ -31,7 +31,7 @@ class EventTimer():
     def gettime(self):
         return time.time() - self.beginTimestamp
 
-def genPredCSV(filenames, predictions, file, from_prob=False):
+def genPredCSV(filenames, predictions, outputFile, from_prob=False):
     '''
     filenames: A list of N filenames
     predictions: A (N,) shaped integer array if from_prob is False; otherwise, it should be an (N, C) shaped array
@@ -39,10 +39,10 @@ def genPredCSV(filenames, predictions, file, from_prob=False):
     if from_prob:
         predictions = np.argmax(predictions, axis=1)
 
-    with open(file, 'w') as f:
-        print('filename,category', file = f)
+    with open(outputFile, 'w') as f:
+        print('filename,category', file=f)
         for f, p in zip(filenames, predictions):
-            print(f'{f},{p:02d}', file = f)
+            print(f'{f},{p:02d}', file=f)
 
 def pickleSave(obj, file):
     with open(file, 'wb') as f:
