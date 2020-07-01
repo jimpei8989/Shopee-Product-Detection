@@ -144,6 +144,8 @@ def main():
                     trainDataloader = cleanUp()
 
             if epoch % 5 == 0:
+                with EventTimer('Cleaning Training Set'):
+                    trainDataloader = cleanUp()
                 torch.save({
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
@@ -165,8 +167,8 @@ def parseArguments():
     parser.add_argument('--validImages', default='data/valid.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
 
-    parser.add_argument('--epochs', type=int, default=15)
-    parser.add_argument('--lr', type=float, default=5e-4)
+    parser.add_argument('--epochs', type=int, default=25)
+    parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--retrain', type=int, default=0)
     parser.add_argument('--cleanup', action='store_true')
 

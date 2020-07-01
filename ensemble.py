@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from Modules import utils
-from Modules.utils import EventTimer
+from Modules.utils import EventTimer, genPredCSV
 from Modules.dataset import ProductDataset
 from Modules.pretrain import models
 
@@ -33,23 +33,32 @@ def main():
     testDataloader = DataLoader(testDataset, batch_size=args.batchSize, num_workers=args.numWorkers, shuffle=False)
 
     models_path = glob.glob(f"{args.modelDir}/*")
+    first_model = 0
 
-    res = open(args.predictFile, 'w')
-    res.write("filename,category\n")
     with torch.no_grad():
+        file_name = []
+        pred = []
         for model_path in models_path:
-            if model_path.split("/")[-1] == 'resnet50':
-                print(model_path)
-            else:
-                continue
             model = models.GetPretrainedModel(model_path.split("/")[-1], 42, pretrain=True).cuda()
             model.load_state_dict(torch.load(model_path))
             model.eval()
+            cnt = 0
             for i, (data, path) in enumerate(testDataloader):
                 test_pred = model(data.cuda())
-                test_label = np.argmax(test_pred.cpu().data.numpy(), axis=1)
-                for j in range(len(path)):
-                    res.write(f"{path[j]},{test_label[j]}\n")
+                test_prob = test_pred.cpu().data.numpy()
+                if not first_model:
+                    for j in range(len(path)):
+                        file_name.append(path[j])
+                        pred.append(test_prob[j])
+                else:
+                    for j in range(len(path)):
+                        for k in range(len(test_prob[j])):
+                            pred[cnt][k] += test_prob[j][k]
+                            cnt += 1
+
+            print(np.array(pred).shape)
+            first_model = 1
+        genPredCSV(file_name, pred, args.predictFile, from_prob=True)
 
 def parseArguments():
     parser = ArgumentParser()
