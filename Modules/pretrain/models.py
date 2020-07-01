@@ -8,7 +8,17 @@ def removeGrads(model):
     for param in model.parameters():
         param.requires_grad = False
 
-def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True):
+def deepFC(lastLayerOutputDim, fcDims):
+    network = nn.Sequential()
+    for i, dim in enumerate(fcDims):
+        network.add_module(f'fc_linear_{i}', nn.Linear(lastLayerOutputDim, dim))
+        lastLayerOutputDim = dim
+
+        if i != len(fcDims) - 1:
+            network.add_module(f'fc_relu{i}', nn.ReLU())
+    return network
+
+def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True, fcDims=[42]):
     '''
     Generates a pretrained image classification model
     '''
@@ -23,10 +33,7 @@ def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True
             
             # Add classification layer
             numFeatures = model.fc.in_features
-            model.fc = nn.Linear(numFeatures, 1000)
-            model = nn.Sequential( model,
-                                   nn.Linear(1000, numClasses)
-                    )
+            model.fc = deepFC(numFeatures, fcDims)
         elif name[:3] == 'vgg':
             # Load model
             model = getattr(models, name)(pretrained=pretrain)
@@ -37,7 +44,7 @@ def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True
             
             # Add classification layer
             numFeatures = model.classifier[-1].in_features
-            model.classifier[-1] = nn.Linear(numFeatures, numClasses)
+            model.classifier[-1] = deepFC(numFeatures, fcDims)
         elif name[:5] == 'dense':
             # Load model
             model = getattr(models, name)(pretrained=pretrain)
@@ -47,13 +54,14 @@ def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True
                 removeGrads(model)
 
             # Add classification layer
-            num_ftrs = model.classifier.in_features
-            model.classifier = nn.Linear(num_ftrs, numClasses)
+            numFeatures = model.classifier.in_features
+            model.classifier = deepFC(numFeatures, fcDims)
         else:
             print('! No such pretrained model')
             return None
-    except:
+    except Exception as e:
         print('! Error: Load model failed.')
+        print(f'Exception: {e}')
         return None
 
     return model

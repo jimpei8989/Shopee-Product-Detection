@@ -57,7 +57,7 @@ def main():
         print(f'> Validation dataset:\t{len(validDataset)}')
 
     with EventTimer(f'Load pretrained model - {args.pretrainModel}'):
-        model = models.GetPretrainedModel(args.pretrainModel, 42)
+        model = models.GetPretrainedModel(args.pretrainModel, 42, fcDims=args.fcDims + [42])
         #torchsummary will crash under densenet, skip the summary.
         #torchsummary.summary(model, (3, 224, 224), device='cpu')
 
@@ -160,10 +160,10 @@ def parseArguments():
     parser = ArgumentParser()
 
     parser.add_argument('--numWorkers', type=int, default=8)
-    parser.add_argument('--dataDir', default='/tmp3/b06902058/data/')
-    parser.add_argument('--modelDir', default=f'/tmp3/b06902058/models/{datetime.now().strftime("%m%d-%H%M")}')
-    parser.add_argument('--trainImages', default='/tmp3/b06902058/data/train.pkl')
-    parser.add_argument('--validImages', default='/tmp3/b06902058/data/valid.pkl')
+    parser.add_argument('--dataDir', default='data/')
+    parser.add_argument('--modelDir', default=f'models/{datetime.now().strftime("%m%d-%H%M")}')
+    parser.add_argument('--trainImages', default='data/train.pkl')
+    parser.add_argument('--validImages', default='data/valid.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
 
     parser.add_argument('--epochs', type=int, default=15)
@@ -171,6 +171,7 @@ def parseArguments():
     parser.add_argument('--retrain', type=int, default=0)
 
     parser.add_argument('--pretrainModel', default='resnet50')
+    parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')
     return parser.parse_args()
 
 if __name__ == '__main__':
