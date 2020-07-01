@@ -57,7 +57,7 @@ def main():
         print(f'> Validation dataset:\t{len(validDataset)}')
 
     with EventTimer(f'Load pretrained model - {args.pretrainModel}'):
-        model = models.GetPretrainedModel(args.pretrainModel, 42, fcDims=args.fcDims + [42])
+        model = models.GetPretrainedModel(args.pretrainModel, fcDims=args.fcDims + [42])
         #torchsummary will crash under densenet, skip the summary.
         #torchsummary.summary(model, (3, 224, 224), device='cpu')
 
@@ -75,6 +75,7 @@ def main():
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
             history = checkpoint['history']
+
 
         def runEpoch(dataloader, train=False, name=''):
             # Enable grad
@@ -98,6 +99,7 @@ def main():
                     losses.append((loss.item(), accu))
 
             return map(np.mean, zip(*losses))
+
 
         def cleanUp():
             model.eval()
@@ -128,6 +130,7 @@ def main():
             print(f"{newDataloader.__len__() * args.batchSize} images remain after cleanup")
             return newDataloader
 
+
         for epoch in range(args.retrain + 1, args.epochs + 1):
             with EventTimer(verbose=False) as et:
                 print(f'====== Epoch {epoch:3d} / {args.epochs:3d} ======')
@@ -139,13 +142,11 @@ def main():
                 scheduler.step(validLoss)
                 print(f'[{et.gettime():.4f}s] Training: {trainLoss:.6f} / {trainAccu:.4f} ; Validation {validLoss:.6f} / {validAccu:.4f}')
 
-            if args.cleanup:
+            if args.cleanup and epoch % args.cleanup_epoch == 0:
                 with EventTimer('Cleaning Training Set'):
                     trainDataloader = cleanUp()
 
             if epoch % 5 == 0:
-                with EventTimer('Cleaning Training Set'):
-                    trainDataloader = cleanUp()
                 torch.save({
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
@@ -154,7 +155,7 @@ def main():
                 }, os.path.join(checkpointDir, f'checkpoint-{epoch:03d}.pt'))
 
         # save model as its coressponding name
-        torch.save(model.state_dict(), os.path.join(args.modelDir, args.pretrainModel))
+        torch.save(model.state_dict(), os.path.join(args.ensembleDir, args.pretrainModel))
         utils.pickleSave(history, os.path.join(args.modelDir, 'history.pkl'))
 
 def parseArguments():
@@ -163,6 +164,7 @@ def parseArguments():
     parser.add_argument('--numWorkers', type=int, default=8)
     parser.add_argument('--dataDir', default='data/')
     parser.add_argument('--modelDir', default=f'models/{datetime.now().strftime("%m%d-%H%M")}')
+    parser.add_argument('--ensembleDir', default=f'ensemble/')
     parser.add_argument('--trainImages', default='data/train.pkl')
     parser.add_argument('--validImages', default='data/valid.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
@@ -171,6 +173,7 @@ def parseArguments():
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--retrain', type=int, default=0)
     parser.add_argument('--cleanup', action='store_true')
+    parser.add_argument('--cleanup_epoch', type=int, default=5)
 
     parser.add_argument('--pretrainModel', default='resnet50')
     parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')

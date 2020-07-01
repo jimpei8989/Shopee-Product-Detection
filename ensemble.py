@@ -39,7 +39,7 @@ def main():
         file_name = []
         pred = []
         for model_path in models_path:
-            model = models.GetPretrainedModel(model_path.split("/")[-1], 42, pretrain=True).cuda()
+            model = models.GetPretrainedModel(model_path.split("/")[-1], fcDims=args.fcDims+[42]).cuda()
             model.load_state_dict(torch.load(model_path))
             model.eval()
             cnt = 0
@@ -56,7 +56,6 @@ def main():
                             pred[cnt][k] += test_prob[j][k]
                             cnt += 1
 
-            print(np.array(pred).shape)
             first_model = 1
         genPredCSV(file_name, pred, args.predictFile, from_prob=True)
 
@@ -64,11 +63,12 @@ def parseArguments():
     parser = ArgumentParser()
 
     parser.add_argument('--numWorkers', type=int, default=8)
-    parser.add_argument('--dataDir', default='/tmp3/b06902058/data/')
-    parser.add_argument('--modelDir', default='/tmp3/b06902058/models/ensemble')
-    parser.add_argument('--predictFile', default='./predict/result.csv')
-    parser.add_argument('--testImages', default='/tmp3/b06902058/data/test.pkl')
+    parser.add_argument('--dataDir', default='data/')
+    parser.add_argument('--modelDir', default='ensemble')
+    parser.add_argument('--predictFile', default='predict/result.csv')
+    parser.add_argument('--testImages', default='data/test.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
+    parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')
 
     return parser.parse_args()
 

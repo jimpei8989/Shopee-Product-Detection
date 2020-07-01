@@ -18,7 +18,7 @@ def deepFC(lastLayerOutputDim, fcDims):
             network.add_module(f'fc_relu{i}', nn.ReLU())
     return network
 
-def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True, fcDims=[42]):
+def GetPretrainedModel(name: str, finetune=False, pretrain=True, fcDims=[42]):
     '''
     Generates a pretrained image classification model
     '''
