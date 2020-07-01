@@ -23,7 +23,10 @@ def GetPretrainedModel(name: str, numClasses: int, finetune=False, pretrain=True
             
             # Add classification layer
             numFeatures = model.fc.in_features
-            model.fc = nn.Linear(numFeatures, numClasses)
+            model.fc = nn.Linear(numFeatures, 1000)
+            model = nn.Sequential( model,
+                                   nn.Linear(1000, numClasses)
+                    )
         elif name[:3] == 'vgg':
             # Load model
             model = getattr(models, name)(pretrained=pretrain)

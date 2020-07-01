@@ -38,7 +38,11 @@ def main():
     res.write("filename,category\n")
     with torch.no_grad():
         for model_path in models_path:
-            model = models.GetPretrainedModel(model_path.split("/")[-1][:-3], 42, pretrain=True).cuda()
+            if model_path.split("/")[-1] == 'resnet50':
+                print(model_path)
+            else:
+                continue
+            model = models.GetPretrainedModel(model_path.split("/")[-1], 42, pretrain=True).cuda()
             model.load_state_dict(torch.load(model_path))
             model.eval()
             for i, (data, path) in enumerate(testDataloader):

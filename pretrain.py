@@ -83,7 +83,7 @@ def main():
                 else: model.eval()
 
                 losses = []
-                for x, y in tqdm(dataloader, desc=name, dynamic_ncols=True):
+                for x, y, z in tqdm(dataloader, desc=name, dynamic_ncols=True):
                     if train:
                         optimizer.zero_grad()
                     
@@ -99,6 +99,37 @@ def main():
 
             return map(np.mean, zip(*losses))
 
+        def cleanUp():
+            model.eval()
+            train_pred = np.zeros((trainDataloader.__len__()) * args.batchSize)
+            cnt = 0
+            for i, (data, label, path) in enumerate(trainDataloader):
+                test_pred = model(data.cuda())
+                pred = np.max(test_pred.cpu().data.numpy(), axis=1)
+                train_pred[cnt:cnt+len(pred)] = pred
+                cnt += len(pred)
+
+            sorted_pred = train_pred
+            sorted_pred.sort()
+            threshold = sorted_pred[ (len(sorted_pred) // 20) ]
+            data_set = [[], []]
+
+            for i, (data, label, path) in enumerate(trainDataloader):
+                test_pred = model(data.cuda())
+                pred = np.max(test_pred.cpu().data.numpy(), axis=1)
+                for j in range(len(pred)):
+                    if pred[j] >= threshold:
+                        data_set[0].append(path[j])
+                        data_set[1].append(label[j])
+
+            newDataset = ProductDataset(os.path.join(args.dataDir, 'train'), os.path.join(args.trainImages), transform=trainingPreprocessing, data=data_set)
+            newDataloader = DataLoader(newDataset, batch_size=args.batchSize, num_workers=args.numWorkers, shuffle=True)
+
+            print(f"{newDataloader.__len__() * args.batchSize} images remain after cleanup")
+            return newDataloader
+            
+            
+
         for epoch in range(args.retrain + 1, args.epochs + 1):
             with EventTimer(verbose=False) as et:
                 print(f'====== Epoch {epoch:3d} / {args.epochs:3d} ======')
@@ -109,6 +140,9 @@ def main():
 
                 scheduler.step(validLoss)
                 print(f'[{et.gettime():.4f}s] Training: {trainLoss:.6f} / {trainAccu:.4f} ; Validation {validLoss:.6f} / {validAccu:.4f}')
+
+            with EventTimer('Cleaning Training Set'):
+                trainDataloader = cleanUp()
 
             if epoch % 5 == 0:
                 torch.save({
@@ -132,11 +166,11 @@ def parseArguments():
     parser.add_argument('--validImages', default='/tmp3/b06902058/data/valid.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
 
-    parser.add_argument('--epochs', type=int, default=25)
+    parser.add_argument('--epochs', type=int, default=15)
     parser.add_argument('--lr', type=float, default=5e-4)
     parser.add_argument('--retrain', type=int, default=0)
 
-    parser.add_argument('--pretrainModel', default='resnet152')
+    parser.add_argument('--pretrainModel', default='resnet50')
     return parser.parse_args()
 
 if __name__ == '__main__':

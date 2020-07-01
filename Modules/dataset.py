@@ -6,10 +6,13 @@ from torch.utils.data import Dataset
 from Modules import utils
 
 class ProductDataset(Dataset):
-    def __init__(self, rootDir, dataPath, transform=None):
+    def __init__(self, rootDir, dataPath, transform=None, data=None):
         super().__init__()
         self.rootDir = rootDir
-        data = utils.pickleLoad(dataPath)
+        if data is not None:
+            pass
+        else:
+            data = utils.pickleLoad(dataPath)
         if len(data) == 2:
             self.imgPathes = data[0]
             self.labels = torch.LongTensor(data[1])
@@ -28,7 +31,12 @@ class ProductDataset(Dataset):
         if self.labels is None:
             return img, self.imgPathes[idx]
         else:
-            return img, self.labels[idx]
+            return img, self.labels[idx], self.imgPathes[idx]
 
     def __len__(self):
         return len(self.imgPathes)
+
+    def remove(idx):
+        self.imgPathes.pop(idx)
+        self.labels.pop(idx) 
+
