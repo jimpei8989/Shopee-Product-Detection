@@ -54,7 +54,7 @@ def main():
                     for j in range(len(path)):
                         for k in range(len(test_prob[j])):
                             pred[cnt][k] += test_prob[j][k]
-                            cnt += 1
+                        cnt += 1
 
             first_model = 1
         genPredCSV(file_name, pred, args.predictFile, from_prob=True)

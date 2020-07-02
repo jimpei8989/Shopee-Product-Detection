@@ -58,6 +58,7 @@ def main():
 
     with EventTimer(f'Load pretrained model - {args.pretrainModel}'):
         model = models.GetPretrainedModel(args.pretrainModel, fcDims=args.fcDims + [42])
+        print(model)
         #torchsummary will crash under densenet, skip the summary.
         #torchsummary.summary(model, (3, 224, 224), device='cpu')
 
@@ -170,7 +171,7 @@ def parseArguments():
     parser.add_argument('--batchSize', type=int, default=128)
 
     parser.add_argument('--epochs', type=int, default=25)
-    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--lr', type=float, default=3e-4)
     parser.add_argument('--retrain', type=int, default=0)
     parser.add_argument('--cleanup', action='store_true')
     parser.add_argument('--cleanup_epoch', type=int, default=5)

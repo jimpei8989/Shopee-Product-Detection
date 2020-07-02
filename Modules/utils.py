@@ -41,8 +41,8 @@ def genPredCSV(filenames, predictions, outputFile, from_prob=False):
 
     with open(outputFile, 'w') as f:
         print('filename,category', file=f)
-        for f, p in zip(filenames, predictions):
-            print(f'{f},{p:02d}', file=f)
+        for name, p in zip(filenames, predictions):
+            print(f'{name},{p:02d}', file=f)
 
 def pickleSave(obj, file):
     with open(file, 'wb') as f:
