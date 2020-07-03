@@ -20,8 +20,10 @@ normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
 inferencePreprocessing = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(15),
+    transforms.RandomResizedCrop((224, 224), scale = (0.75, 1), ratio = (0.8, 1.25)),
+    transforms.ColorJitter(brightness = 0.15, contrast = 0.15, saturation = 0.15, hue = 0.1),
     transforms.ToTensor(),
     normalize
 ])
@@ -38,25 +40,26 @@ def main():
     with torch.no_grad():
         file_name = []
         pred = []
-        for model_path in models_path:
-            model = models.GetPretrainedModel(model_path.split("/")[-1], fcDims=args.fcDims+[42]).cuda()
-            model.load_state_dict(torch.load(model_path))
-            model.eval()
-            cnt = 0
-            for i, (data, path) in enumerate(testDataloader):
-                test_pred = model(data.cuda())
-                test_prob = test_pred.cpu().data.numpy()
-                if not first_model:
-                    for j in range(len(path)):
-                        file_name.append(path[j])
-                        pred.append(test_prob[j])
-                else:
-                    for j in range(len(path)):
-                        for k in range(len(test_prob[j])):
-                            pred[cnt][k] += test_prob[j][k]
-                        cnt += 1
+        for epoch in range(args.ttaEpoch):
+            for model_path in models_path:
+                model = models.GetPretrainedModel(model_path.split("/")[-1], fcDims=args.fcDims+[42]).cuda()
+                model.load_state_dict(torch.load(model_path))
+                model.eval()
+                cnt = 0
+                for i, (data, path) in enumerate(testDataloader):
+                    test_pred = model(data.cuda())
+                    test_prob = test_pred.cpu().data.numpy()
+                    if not first_model:
+                        for j in range(len(path)):
+                            file_name.append(path[j])
+                            pred.append(test_prob[j])
+                    else:
+                        for j in range(len(path)):
+                            for k in range(len(test_prob[j])):
+                                pred[cnt][k] += test_prob[j][k]
+                            cnt += 1
 
-            first_model = 1
+                first_model = 1
         genPredCSV(file_name, pred, args.predictFile, from_prob=True)
 
 def parseArguments():
@@ -68,6 +71,7 @@ def parseArguments():
     parser.add_argument('--predictFile', default='predict/result.csv')
     parser.add_argument('--testImages', default='data/test.pkl')
     parser.add_argument('--batchSize', type=int, default=128)
+    parser.add_argument('--ttaEpoch', type=int, default=10)
     parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')
 
     return parser.parse_args()
