@@ -15,6 +15,7 @@ def deepFC(lastLayerOutputDim, fcDims):
         lastLayerOutputDim = dim
 
         if i != len(fcDims) - 1:
+            network.add_module(f'fc_dropout_{i}', nn.Dropout(0.5))
             network.add_module(f'fc_relu{i}', nn.ReLU())
     return network
 
