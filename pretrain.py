@@ -69,7 +69,7 @@ def main():
 
         criterion = CrossEntropyLoss()
         optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.l2)
-        scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-7)
+        scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-6)
         history = []
 
         if args.retrain != 0:
