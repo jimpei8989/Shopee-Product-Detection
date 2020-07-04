@@ -81,6 +81,10 @@ def main():
 
 
         def runEpoch(dataloader, train=False, name=''):
+            # For empty validation dataloader
+            if len(dataloader) == 0:
+                return 0, 0
+
             # Enable grad
             with (torch.enable_grad() if train else torch.no_grad()):
                 if train: model.train()
@@ -158,7 +162,7 @@ def main():
                 }, os.path.join(checkpointDir, f'checkpoint-{epoch:03d}.pt'))
 
         # save model as its coressponding name
-        torch.save(model.state_dict(), os.path.join(args.ensembleDir, args.pretrainModel))
+        torch.save(model.state_dict(), os.path.join(args.modelDir, 'model-weights.pt'))
         utils.pickleSave(history, os.path.join(args.modelDir, 'history.pkl'))
 
 def parseArguments():
