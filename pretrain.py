@@ -6,8 +6,8 @@ from tqdm import tqdm
 import numpy as np
 import torch, torchsummary
 from torch.nn import CrossEntropyLoss
-from torch.optim import Adam
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim import Adam, AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
@@ -46,6 +46,8 @@ def main():
     checkpointDir = os.path.join(args.modelDir, 'checkpoints')
     os.makedirs(checkpointDir, exist_ok=True)
 
+    os.makedirs(args.ensembleDir, exist_ok=True)
+
     with EventTimer('Preparing for dataset / dataloader'):
         trainDataset = ProductDataset(os.path.join(args.dataDir, 'train'), os.path.join(args.trainImages), transform=trainingPreprocessing)
         validDataset = ProductDataset(os.path.join(args.dataDir, 'train'), os.path.join(args.validImages), transform=inferencePreprocessing)
@@ -66,8 +68,8 @@ def main():
         model.cuda()
 
         criterion = CrossEntropyLoss()
-        optimizer = Adam(model.parameters(), lr=args.lr)
-        scheduler = ReduceLROnPlateau(optimizer, factor=0.5, min_lr=1e-6, threshold=1e-2, patience=10)
+        optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.l2)
+        scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-6)
         history = []
 
         if args.retrain != 0:
@@ -140,7 +142,7 @@ def main():
 
                 history.append(((trainLoss, trainAccu), (validLoss, validAccu)))
 
-                scheduler.step(validLoss)
+                scheduler.step()
                 print(f'[{et.gettime():.4f}s] Training: {trainLoss:.6f} / {trainAccu:.4f} ; Validation {validLoss:.6f} / {validAccu:.4f}')
 
             if args.cleanup and epoch % args.cleanup_epoch == 0:
@@ -171,7 +173,8 @@ def parseArguments():
     parser.add_argument('--batchSize', type=int, default=128)
 
     parser.add_argument('--epochs', type=int, default=25)
-    parser.add_argument('--lr', type=float, default=3e-4)
+    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--l2', type=float, default=1e-2)
     parser.add_argument('--retrain', type=int, default=0)
     parser.add_argument('--cleanup', action='store_true')
     parser.add_argument('--cleanup_epoch', type=int, default=5)
