@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 import glob
 import numpy as np
+
 import torch, torchsummary
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
@@ -42,11 +43,11 @@ def main():
         pred = []
         for epoch in range(args.ttaEpoch):
             for model_path in models_path:
-                model = models.GetPretrainedModel(model_path.split("/")[-1], fcDims=args.fcDims+[42]).cuda()
+                model = models.GetPretrainedModel(model_path.split("/")[-1].split('-')[0], fcDims=args.fcDims+[42]).cuda()
                 model.load_state_dict(torch.load(model_path))
                 model.eval()
                 cnt = 0
-                for i, (data, path) in enumerate(testDataloader):
+                for i, (data, path) in enumerate(tqdm(testDataloader)):
                     test_pred = model(data.cuda())
                     test_prob = test_pred.cpu().data.numpy()
                     if not first_model:
@@ -70,7 +71,7 @@ def parseArguments():
     parser.add_argument('--modelDir', default='ensemble')
     parser.add_argument('--predictFile', default='predict/result.csv')
     parser.add_argument('--testImages', default='data/test.pkl')
-    parser.add_argument('--batchSize', type=int, default=128)
+    parser.add_argument('--batchSize', type=int, default=256)
     parser.add_argument('--ttaEpoch', type=int, default=10)
     parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')
 
