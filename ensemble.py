@@ -65,7 +65,7 @@ def parseArguments():
     parser.add_argument('--numWorkers', type=int, default=8)
     parser.add_argument('--dataDir', default='data/')
     parser.add_argument('--modelDir', default='ensemble')
-    parser.add_argument('--predictFile', default='predict/result.csv')
+    parser.add_argument('--predictFile', default='result.csv')
     parser.add_argument('--testImages', default='data/test.pkl')
     parser.add_argument('--batchSize', type=int, default=256)
     parser.add_argument('--ttaEpoch', type=int, default=10)
