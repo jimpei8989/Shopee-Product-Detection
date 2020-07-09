@@ -16,7 +16,7 @@
 - 08: wallets
 - 09: suitcases
 - 10: smart phones (non apple)
-- 11: iphones / i*
+- 11: iphones / i\*
 - 12: clocks
 - 13: milk bottles
 - 14: eletric pots
@@ -57,4 +57,13 @@ python3 data-split.py
 ```
 
 It will generate three files, `data/train.pkl`, `data/valid.pkl` and `data/test.pkl`. The format of the files are listed in `data-split.py`
+
+### Model
+Use pretrain model and replace its head to fit the task. Then finetune our model.
+
+### Results
+- Submission: ensemble 3 models
+- Public Score: 0.80258
+- Private Score: 0.80659
+- Rank (Private): 86
 
