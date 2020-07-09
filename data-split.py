@@ -37,6 +37,8 @@ def main():
 
         utils.pickleSave((trainX, trainY), 'data/train.pkl')
         utils.pickleSave((validX, validY), 'data/valid.pkl')
+        utils.pickleSave((trainX + validX, trainY + validY), 'data/train-all.pkl')
+        utils.pickleSave(([], []), 'data/valid-all.pkl')
 
     with EventTimer('Handling Testing Data'):
         with open('data/test.csv') as f:
