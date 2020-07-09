@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 import glob
 import numpy as np
+
 import torch, torchsummary
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
@@ -35,32 +36,28 @@ def main():
     testDataloader = DataLoader(testDataset, batch_size=args.batchSize, num_workers=args.numWorkers, shuffle=False)
 
     models_path = glob.glob(f"{args.modelDir}/*")
-    first_model = 0
+
+    filenames = utils.pickleLoad(args.testImages)
+    predictions = np.zeros((len(filenames), 42))
 
     with torch.no_grad():
-        file_name = []
         pred = []
-        for epoch in range(args.ttaEpoch):
-            for model_path in models_path:
-                model = models.GetPretrainedModel(model_path.split("/")[-1], fcDims=args.fcDims+[42]).cuda()
-                model.load_state_dict(torch.load(model_path))
-                model.eval()
-                cnt = 0
-                for i, (data, path) in enumerate(testDataloader):
-                    test_pred = model(data.cuda())
-                    test_prob = test_pred.cpu().data.numpy()
-                    if not first_model:
-                        for j in range(len(path)):
-                            file_name.append(path[j])
-                            pred.append(test_prob[j])
-                    else:
-                        for j in range(len(path)):
-                            for k in range(len(test_prob[j])):
-                                pred[cnt][k] += test_prob[j][k]
-                            cnt += 1
+        for model_path in models_path:
+            model = models.GetPretrainedModel(model_path.split("/")[-1].split('-')[0], fcDims=args.fcDims+[42]).cuda()
+            model.load_state_dict(torch.load(model_path))
+            model.eval()
 
-                first_model = 1
-        genPredCSV(file_name, pred, args.predictFile, from_prob=True)
+            with EventTimer(f'Predicting {model_path}'):
+                for epoch in range(args.ttaEpoch):
+                    predList = []
+                    for data, path in tqdm(testDataloader):
+                        predList.append(model(data.cuda()).cpu().data.numpy())
+
+                    predictions += np.concatenate(predList, axis=0)
+            
+            del model
+
+    genPredCSV(filenames, predictions, args.predictFile, from_prob=True)
 
 def parseArguments():
     parser = ArgumentParser()
@@ -68,9 +65,9 @@ def parseArguments():
     parser.add_argument('--numWorkers', type=int, default=8)
     parser.add_argument('--dataDir', default='data/')
     parser.add_argument('--modelDir', default='ensemble')
-    parser.add_argument('--predictFile', default='predict/result.csv')
+    parser.add_argument('--predictFile', default='result.csv')
     parser.add_argument('--testImages', default='data/test.pkl')
-    parser.add_argument('--batchSize', type=int, default=128)
+    parser.add_argument('--batchSize', type=int, default=256)
     parser.add_argument('--ttaEpoch', type=int, default=10)
     parser.add_argument('--fcDims', type=int, nargs='+', default=[], help='Do not include output dimension')
 
